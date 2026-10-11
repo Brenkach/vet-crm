@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16
+    container_name: vet_crm_db
+    environment:
+      POSTGRES_USER: vet
+      POSTGRES_PASSWORD: vet
+      POSTGRES_DB: vet_crm
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vet -d vet_crm"]
+      interval: 5s
+      retries: 5
+
+volumes:
+  pg_data:

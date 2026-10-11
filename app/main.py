@@ -1,13 +1,20 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-app = FastAPI(title="Vet Clinic CRM")
+from app import models  # noqa: F401  — реєструє моделі в Base.metadata
+from app.api.routes import router
+from app.core.config import settings
+from app.db.database import Base, engine
 
 
-@app.get("/")
-async def root():
-    return {"message": "Vet CRM API is running"}
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Для лаби таблиці створюються при старті; у реальному проєкті — міграції Alembic
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
 
 
-@app.get("/health")
-async def health_check():
-    return {"status": "ok "}
+app = FastAPI(title=settings.app_title, lifespan=lifespan)
+app.include_router(router)
