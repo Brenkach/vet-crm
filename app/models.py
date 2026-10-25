@@ -1,6 +1,6 @@
 import enum
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy import Enum as SAEnum
@@ -22,12 +22,7 @@ class AppointmentStatus(str, enum.Enum):
 
 def _enum_column(enum_cls):
     # Зберігаємо значення ("admin"), а не імена ("ADMIN"); без нативного ENUM — працює і в SQLite, і в Postgres
-    return SAEnum(
-        enum_cls,
-        native_enum=False,
-        length=20,
-        values_callable=lambda e: [m.value for m in e],
-    )
+    return SAEnum(enum_cls, native_enum=False, length=20, values_callable=lambda e: [m.value for m in e])
 
 
 class User(Base):
@@ -41,7 +36,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    pets: Mapped[List["Pet"]] = relationship(back_populates="owner")
+    pets: Mapped[list["Pet"]] = relationship(back_populates="owner")
 
 
 class Pet(Base):
@@ -55,7 +50,7 @@ class Pet(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
 
     owner: Mapped[User] = relationship(back_populates="pets")
-    appointments: Mapped[List["Appointment"]] = relationship(
+    appointments: Mapped[list["Appointment"]] = relationship(
         back_populates="pet", cascade="all, delete-orphan", lazy="selectin"
     )
 

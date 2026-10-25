@@ -1,0 +1,5 @@
+Method,Name,Error,Occurrences
+POST,POST /auth/register,HTTPError('500 Server Error: Internal Server Error for url: POST /auth/register'),3
+POST,POST /pets,HTTPError('500 Server Error: Internal Server Error for url: POST /pets'),2
+POST,POST /auth/register,"ConnectionResetError(54, 'Connection reset by peer')",3
+GET,GET /users/me,"ConnectionResetError(54, 'Connection reset by peer')",1

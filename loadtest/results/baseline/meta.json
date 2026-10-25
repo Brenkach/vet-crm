@@ -1,0 +1,19 @@
+{
+  "profile": "baseline",
+  "settings": {
+    "users": 50,
+    "spawn_rate": 5.0,
+    "duration": 180
+  },
+  "host": "http://127.0.0.1:8000",
+  "environment": "sandbox",
+  "admins_included": false,
+  "server_pids": [
+    45467
+  ],
+  "machine": "Darwin arm64, 10 логічних ядер",
+  "python": "3.9.6",
+  "started_at": "2026-10-25T16:32:50",
+  "duration_s": 184.3,
+  "locust_exit_code": 1
+}

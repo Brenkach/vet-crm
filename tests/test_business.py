@@ -6,9 +6,7 @@ from datetime import datetime, timedelta, timezone
 async def test_full_client_flow(client, bob_headers, bob_pet):
     when = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
     created = await client.post(
-        "/appointments",
-        json={"pet_id": bob_pet["id"], "scheduled_at": when, "reason": "Огляд"},
-        headers=bob_headers,
+        "/appointments", json={"pet_id": bob_pet["id"], "scheduled_at": when, "reason": "Огляд"}, headers=bob_headers
     )
     assert created.status_code == 201
     appt_id = created.json()["id"]
@@ -25,9 +23,7 @@ async def test_full_client_flow(client, bob_headers, bob_pet):
 async def test_cannot_book_in_the_past(client, bob_headers, bob_pet):
     when = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
     resp = await client.post(
-        "/appointments",
-        json={"pet_id": bob_pet["id"], "scheduled_at": when, "reason": "Огляд"},
-        headers=bob_headers,
+        "/appointments", json={"pet_id": bob_pet["id"], "scheduled_at": when, "reason": "Огляд"}, headers=bob_headers
     )
     assert resp.status_code == 400
 

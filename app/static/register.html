@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22 fill=%22%233f7262%22%3E%3Cellipse cx=%2216%22 cy=%2221.5%22 rx=%227%22 ry=%226%22/%3E%3Cellipse cx=%227.5%22 cy=%2213%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2212.5%22 cy=%227.5%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2219.5%22 cy=%227.5%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2224.5%22 cy=%2213%22 rx=%223%22 ry=%223.8%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <title>Реєстрація — ВетКлініка</title>
+</head>
+<body class="auth">
+  <aside class="auth-side">
+    <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><ellipse cx="16" cy="21.5" rx="7" ry="6"/><ellipse cx="7.5" cy="13" rx="3" ry="3.8"/><ellipse cx="12.5" cy="7.5" rx="3" ry="3.8"/><ellipse cx="19.5" cy="7.5" rx="3" ry="3.8"/><ellipse cx="24.5" cy="13" rx="3" ry="3.8"/></svg> ВетКлініка</a>
+    <p class="auth-lead">Додайте своїх тварин і записуйтесь на прийом онлайн.</p>
+    <p class="auth-note">Реєстрація створює обліковий запис клієнта.</p>
+  </aside>
+  <main class="auth-main">
+    <form id="register-form" class="auth-form" novalidate>
+      <h1>Реєстрація</h1>
+      <label>Ім'я та прізвище
+        <input type="text" name="full_name" required autocomplete="name">
+      </label>
+      <label>Email
+        <input type="email" name="email" required autocomplete="email">
+      </label>
+      <label>Пароль
+        <input type="password" name="password" required minlength="8" autocomplete="new-password">
+        <span class="muted">Щонайменше 8 символів</span>
+      </label>
+      <p class="form-error" role="alert" hidden></p>
+      <button class="btn" type="submit">Створити обліковий запис</button>
+      <p class="muted">Вже зареєстровані? <a href="login.html">Увійти</a></p>
+    </form>
+  </main>
+  <script src="app.js"></script>
+  <script src="register.js"></script>
+</body>
+</html>

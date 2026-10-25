@@ -1,7 +1,7 @@
 """Хешування паролів та робота з JWT-токенами."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import bcrypt
 import jwt
@@ -27,7 +27,7 @@ def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> 
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 
-def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
+def decode_access_token(token: str) -> Optional[dict[str, Any]]:
     try:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
     except jwt.PyJWTError:

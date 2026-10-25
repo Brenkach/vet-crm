@@ -1,17 +1,25 @@
 """Спільні фікстури: окрема БД у пам'яті для кожного тесту, HTTP-клієнт, користувачі різних ролей."""
 
-from datetime import datetime, timedelta, timezone
-from typing import Dict
+import os
 
-import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
+# Тести завжди працюють в ізольованому середовищі test з базою в пам'яті.
+# Значення задаються примусово (не setdefault), щоб тести ніколи не зачепили sandbox чи production БД.
+os.environ["APP_ENV"] = "test"
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+os.environ["SECRET_KEY"] = "test-only-secret-key-used-nowhere-else-0123456789"
 
-from app.core.security import hash_password
-from app.db.database import Base, get_session
-from app.main import app
-from app.models import Role, User
+
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+import pytest  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
+
+from app.core.security import hash_password  # noqa: E402
+from app.db.database import Base, get_session  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models import Role, User  # noqa: E402
 
 PASSWORD = "password123"
 
@@ -43,19 +51,14 @@ async def client(session_factory):
 
 async def _create_user(session_factory, email: str, role: Role) -> User:
     async with session_factory() as session:
-        user = User(
-            email=email,
-            full_name=email.split("@")[0],
-            hashed_password=hash_password(PASSWORD),
-            role=role,
-        )
+        user = User(email=email, full_name=email.split("@")[0], hashed_password=hash_password(PASSWORD), role=role)
         session.add(user)
         await session.commit()
         await session.refresh(user)
         return user
 
 
-async def login(client: AsyncClient, email: str, password: str = PASSWORD) -> Dict[str, str]:
+async def login(client: AsyncClient, email: str, password: str = PASSWORD) -> dict[str, str]:
     resp = await client.post("/auth/login", data={"username": email, "password": password})
     assert resp.status_code == 200, resp.text
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}

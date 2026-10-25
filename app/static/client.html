@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22 fill=%22%233f7262%22%3E%3Cellipse cx=%2216%22 cy=%2221.5%22 rx=%227%22 ry=%226%22/%3E%3Cellipse cx=%227.5%22 cy=%2213%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2212.5%22 cy=%227.5%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2219.5%22 cy=%227.5%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2224.5%22 cy=%2213%22 rx=%223%22 ry=%223.8%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <title>Кабінет клієнта — ВетКлініка</title>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><ellipse cx="16" cy="21.5" rx="7" ry="6"/><ellipse cx="7.5" cy="13" rx="3" ry="3.8"/><ellipse cx="12.5" cy="7.5" rx="3" ry="3.8"/><ellipse cx="19.5" cy="7.5" rx="3" ry="3.8"/><ellipse cx="24.5" cy="13" rx="3" ry="3.8"/></svg> ВетКлініка</a>
+    <div class="who">
+      <strong id="who-name"></strong>
+      <span class="muted" id="who-email"></span>
+      <span class="role-badge" id="who-role"></span>
+    </div>
+    <nav class="nav" aria-label="Розділи">
+      <a href="#appointments">Записи на прийом</a>
+      <a href="#pets">Мої тварини</a>
+    </nav>
+    <button class="btn btn-ghost" id="logout" type="button">Вийти</button>
+  </aside>
+  <main class="content">
+    <header class="page-head">
+      <h1 id="page-title">Кабінет клієнта</h1>
+      <p class="muted" id="page-message"></p>
+    </header>
+
+    <section class="section" id="appointments">
+      <div class="section-head"><h2>Записи на прийом</h2></div>
+      <div class="panel">
+        <ul class="appt-list" id="appt-list"></ul>
+        <form class="inline-form" id="appt-form" novalidate>
+          <label>Тварина
+            <select name="pet_id" required></select>
+          </label>
+          <label>Дата і час
+            <input type="datetime-local" name="scheduled_at" required>
+          </label>
+          <label class="wide">Причина звернення
+            <input type="text" name="reason" required maxlength="1000" placeholder="Наприклад, щорічне щеплення">
+          </label>
+          <p class="form-error" role="alert" hidden></p>
+          <div><button class="btn" type="submit">Записатися</button></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="pets">
+      <div class="section-head"><h2>Мої тварини</h2></div>
+      <ul class="pet-list" id="pet-list"></ul>
+      <form class="panel inline-form" id="pet-form" novalidate>
+        <label>Кличка
+          <input type="text" name="name" required maxlength="100">
+        </label>
+        <label>Вид
+          <input type="text" name="species" required maxlength="50" placeholder="кіт, собака…">
+        </label>
+        <label>Порода
+          <input type="text" name="breed" maxlength="100">
+        </label>
+        <label>Дата народження
+          <input type="date" name="birth_date">
+        </label>
+        <p class="form-error" role="alert" hidden></p>
+        <div><button class="btn" type="submit">Додати тварину</button></div>
+      </form>
+    </section>
+  </main>
+</div>
+<script src="app.js"></script>
+<script src="client.js"></script>
+</body>
+</html>

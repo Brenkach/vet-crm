@@ -15,10 +15,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(data: UserRegister, session: AsyncSession = Depends(get_session)):
     email = data.email.lower()
     if await session.scalar(select(User).where(User.email == email)):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Користувач з таким email вже існує",
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Користувач з таким email вже існує")
 
     user = User(
         email=email,

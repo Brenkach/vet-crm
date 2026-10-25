@@ -1,11 +1,6 @@
 """Юніт-тести модуля безпеки (без HTTP і БД)."""
 
-from app.core.security import (
-    create_access_token,
-    decode_access_token,
-    hash_password,
-    verify_password,
-)
+from app.core.security import create_access_token, decode_access_token, hash_password, verify_password
 
 
 def test_password_is_hashed_not_stored_plain():

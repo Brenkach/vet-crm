@@ -30,18 +30,14 @@ async def test_client_cannot_promote_self(client, alice, alice_headers):
 
 async def test_client_cannot_change_appointment_status(client, bob_headers, bob_appointment):
     resp = await client.patch(
-        f"/appointments/{bob_appointment['id']}/status",
-        json={"status": "completed"},
-        headers=bob_headers,
+        f"/appointments/{bob_appointment['id']}/status", json={"status": "completed"}, headers=bob_headers
     )
     assert resp.status_code == 403
 
 
 async def test_admin_can_change_appointment_status(client, admin_headers, bob_appointment):
     resp = await client.patch(
-        f"/appointments/{bob_appointment['id']}/status",
-        json={"status": "completed"},
-        headers=admin_headers,
+        f"/appointments/{bob_appointment['id']}/status", json={"status": "completed"}, headers=admin_headers
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "completed"

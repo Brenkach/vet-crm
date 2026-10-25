@@ -1,0 +1,19 @@
+{
+  "profile": "step",
+  "settings": {
+    "stages": "10,25,50,100,150",
+    "stage_seconds": 60,
+    "spawn_rate": 5.0
+  },
+  "host": "http://127.0.0.1:8000",
+  "environment": "sandbox",
+  "admins_included": false,
+  "server_pids": [
+    45815
+  ],
+  "machine": "Darwin arm64, 10 логічних ядер",
+  "python": "3.9.6",
+  "started_at": "2026-10-25T16:40:58",
+  "duration_s": 301.3,
+  "locust_exit_code": 1
+}

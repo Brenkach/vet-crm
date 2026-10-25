@@ -11,6 +11,7 @@ import getpass
 from sqlalchemy import select
 
 from app import models  # noqa: F401
+from app.core.config import settings
 from app.core.security import hash_password
 from app.db.database import Base, SessionLocal, engine
 from app.models import Role, User
@@ -27,12 +28,7 @@ async def create_admin(email: str, full_name: str, password: str) -> None:
             print(f"Користувача {email} підвищено до адміністратора")
         else:
             session.add(
-                User(
-                    email=email.lower(),
-                    full_name=full_name,
-                    hashed_password=hash_password(password),
-                    role=Role.ADMIN,
-                )
+                User(email=email.lower(), full_name=full_name, hashed_password=hash_password(password), role=Role.ADMIN)
             )
             print(f"Адміністратора {email} створено")
         await session.commit()
@@ -44,6 +40,7 @@ def main() -> None:
     parser.add_argument("--email", required=True)
     parser.add_argument("--name", default="Administrator")
     args = parser.parse_args()
+    print(f"Середовище: {settings.app_env.value}, БД: {settings.safe_database_url}")
     password = getpass.getpass("Пароль (мін. 8 символів): ")
     if len(password) < 8:
         raise SystemExit("Пароль занадто короткий")

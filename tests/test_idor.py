@@ -58,9 +58,7 @@ async def test_admin_can_access_any_pet(client, admin_headers, bob_pet):
 async def test_cannot_book_appointment_for_other_pet(client, alice_headers, bob_pet):
     when = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
     resp = await client.post(
-        "/appointments",
-        json={"pet_id": bob_pet["id"], "scheduled_at": when, "reason": "?"},
-        headers=alice_headers,
+        "/appointments", json={"pet_id": bob_pet["id"], "scheduled_at": when, "reason": "?"}, headers=alice_headers
     )
     assert resp.status_code == 403
 

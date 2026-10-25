@@ -36,8 +36,7 @@ async def test_token_of_deleted_user_gets_401(client):
 # ---------- Реєстрація ----------
 async def test_register_creates_client(client):
     resp = await client.post(
-        "/auth/register",
-        json={"email": "new@example.com", "full_name": "Новий", "password": PASSWORD},
+        "/auth/register", json={"email": "new@example.com", "full_name": "Новий", "password": PASSWORD}
     )
     assert resp.status_code == 201
     body = resp.json()
@@ -47,40 +46,25 @@ async def test_register_creates_client(client):
 
 async def test_register_cannot_choose_admin_role(client):
     resp = await client.post(
-        "/auth/register",
-        json={
-            "email": "hacker@example.com",
-            "full_name": "H",
-            "password": PASSWORD,
-            "role": "admin",
-        },
+        "/auth/register", json={"email": "hacker@example.com", "full_name": "H", "password": PASSWORD, "role": "admin"}
     )
     assert resp.status_code == 201
     assert resp.json()["role"] == "client"
 
 
 async def test_register_duplicate_email(client, alice):
-    resp = await client.post(
-        "/auth/register",
-        json={"email": alice.email, "full_name": "Copy", "password": PASSWORD},
-    )
+    resp = await client.post("/auth/register", json={"email": alice.email, "full_name": "Copy", "password": PASSWORD})
     assert resp.status_code == 409
 
 
 async def test_register_short_password(client):
-    resp = await client.post(
-        "/auth/register",
-        json={"email": "x@example.com", "full_name": "X", "password": "123"},
-    )
+    resp = await client.post("/auth/register", json={"email": "x@example.com", "full_name": "X", "password": "123"})
     assert resp.status_code == 422
 
 
 # ---------- Вхід ----------
 async def test_register_then_login_then_access(client):
-    await client.post(
-        "/auth/register",
-        json={"email": "flow@example.com", "full_name": "Flow", "password": PASSWORD},
-    )
+    await client.post("/auth/register", json={"email": "flow@example.com", "full_name": "Flow", "password": PASSWORD})
     headers = await login(client, "flow@example.com")
     resp = await client.get("/users/me", headers=headers)
     assert resp.status_code == 200

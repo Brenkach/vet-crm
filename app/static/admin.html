@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22 fill=%22%233f7262%22%3E%3Cellipse cx=%2216%22 cy=%2221.5%22 rx=%227%22 ry=%226%22/%3E%3Cellipse cx=%227.5%22 cy=%2213%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2212.5%22 cy=%227.5%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2219.5%22 cy=%227.5%22 rx=%223%22 ry=%223.8%22/%3E%3Cellipse cx=%2224.5%22 cy=%2213%22 rx=%223%22 ry=%223.8%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <title>Панель адміністратора — ВетКлініка</title>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="currentColor"><ellipse cx="16" cy="21.5" rx="7" ry="6"/><ellipse cx="7.5" cy="13" rx="3" ry="3.8"/><ellipse cx="12.5" cy="7.5" rx="3" ry="3.8"/><ellipse cx="19.5" cy="7.5" rx="3" ry="3.8"/><ellipse cx="24.5" cy="13" rx="3" ry="3.8"/></svg> ВетКлініка</a>
+    <div class="who">
+      <strong id="who-name"></strong>
+      <span class="muted" id="who-email"></span>
+      <span class="role-badge" id="who-role"></span>
+    </div>
+    <nav class="nav" aria-label="Розділи">
+      <a href="#appointments">Записи</a>
+      <a href="#users">Користувачі</a>
+    </nav>
+    <button class="btn btn-ghost" id="logout" type="button">Вийти</button>
+  </aside>
+  <main class="content">
+    <header class="page-head">
+      <h1 id="page-title">Панель адміністратора</h1>
+      <p class="muted" id="page-message"></p>
+    </header>
+
+    <div class="stats" id="stats"></div>
+
+    <section class="section" id="appointments">
+      <div class="section-head"><h2>Усі записи на прийом</h2></div>
+      <div class="panel table-wrap">
+        <table>
+          <thead><tr><th>Дата і час</th><th>Тварина</th><th>Власник</th><th>Причина</th><th>Статус</th></tr></thead>
+          <tbody id="appt-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="users">
+      <div class="section-head"><h2>Користувачі</h2></div>
+      <div class="panel table-wrap">
+        <table>
+          <thead><tr><th>Ім'я</th><th>Email</th><th>Тварин</th><th>Роль</th></tr></thead>
+          <tbody id="user-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="app.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

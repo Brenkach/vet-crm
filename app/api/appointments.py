@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -25,7 +24,7 @@ async def _get_appointment_or_404(session: AsyncSession, appointment_id: int) ->
     return appointment
 
 
-@router.get("", response_model=List[AppointmentRead])
+@router.get("", response_model=list[AppointmentRead])
 async def list_appointments(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     stmt = select(Appointment).order_by(Appointment.scheduled_at)
     if user.role != Role.ADMIN:
@@ -44,10 +43,7 @@ async def create_appointment(
 
     scheduled_at = _as_utc(data.scheduled_at)
     if scheduled_at <= datetime.now(timezone.utc):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Не можна записатися на минулий час",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Не можна записатися на минулий час")
 
     appointment = Appointment(pet_id=pet.id, scheduled_at=scheduled_at, reason=data.reason)
     session.add(appointment)
@@ -76,10 +72,7 @@ async def cancel_appointment(
     appointment = await _get_appointment_or_404(session, appointment_id)
     ensure_owner_or_admin(user, appointment.pet.owner_id)
     if appointment.status != AppointmentStatus.SCHEDULED:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Скасувати можна лише запланований запис",
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Скасувати можна лише запланований запис")
     appointment.status = AppointmentStatus.CANCELLED
     await session.commit()
     return appointment

@@ -1,6 +1,6 @@
 """Залежності FastAPI: поточний користувач, перевірка ролей і власника ресурсу."""
 
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -52,7 +52,4 @@ def require_roles(*roles: Role) -> Callable:
 def ensure_owner_or_admin(user: User, owner_id: int) -> None:
     """Горизонтальне розмежування (захист від IDOR): чужі ресурси — лише для адміна."""
     if user.role != Role.ADMIN and user.id != owner_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Доступ до чужого ресурсу заборонено",
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ до чужого ресурсу заборонено")

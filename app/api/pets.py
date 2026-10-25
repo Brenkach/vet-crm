@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +17,7 @@ async def get_pet_or_404(session: AsyncSession, pet_id: int) -> Pet:
     return pet
 
 
-@router.get("", response_model=List[PetRead])
+@router.get("", response_model=list[PetRead])
 async def list_pets(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     stmt = select(Pet).order_by(Pet.id)
     if user.role != Role.ADMIN:
@@ -42,11 +40,7 @@ async def create_pet(
 
 
 @router.get("/{pet_id}", response_model=PetRead)
-async def read_pet(
-    pet_id: int,
-    user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
-):
+async def read_pet(pet_id: int, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     pet = await get_pet_or_404(session, pet_id)
     ensure_owner_or_admin(user, pet.owner_id)
     return pet
@@ -68,11 +62,7 @@ async def update_pet(
 
 
 @router.delete("/{pet_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_pet(
-    pet_id: int,
-    user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
-):
+async def delete_pet(pet_id: int, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     pet = await get_pet_or_404(session, pet_id)
     ensure_owner_or_admin(user, pet.owner_id)
     await session.delete(pet)

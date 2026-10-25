@@ -1,8 +1,18 @@
+# Python
 .venv/
-.idea/
 __pycache__/
 *.pyc
 .pytest_cache/
-*.db
-.env
+.ruff_cache/
+
+# IDE / OS
+.idea/
 .DS_Store
+
+# Бази даних (sandbox і production — окремі файли, жоден не комітиться)
+*.db
+
+# Секрети: справжні файли оточення не комітяться, шаблони — так
+.env
+.env.*
+!.env.*.example

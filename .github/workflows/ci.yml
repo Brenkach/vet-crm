@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Лінтери (pre-commit + ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Ті самі перевірки, що й локально перед комітом (.pre-commit-config.yaml)
+      - uses: pre-commit/action@v3.0.1
+
+  test:
+    name: Тести pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Встановлення залежностей
+        run: pip install -r requirements.txt
+      - name: Запуск тестів
+        # Тести самі задають APP_ENV=test і базу в пам'яті — секрети в CI не потрібні
+        run: pytest -v

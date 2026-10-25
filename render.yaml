@@ -1,0 +1,39 @@
+# Інфраструктура production на Render (Blueprint).
+# Деплой відбувається лише після того, як у GitHub пройде CI (autoDeployTrigger: checksPass).
+services:
+  - type: web
+    name: vet-crm
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DOCS_ENABLED
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vet-crm-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      # Значення вводяться вручну при створенні Blueprint і не зберігаються в репозиторії
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: vet-crm-db
+    plan: free
+    region: frankfurt
+    databaseName: vet_crm
+    user: vet_crm

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -42,7 +42,7 @@ class HomePage(BaseModel):
     title: str
     message: str
     role: Role
-    available_sections: List[str]
+    available_sections: list[str]
 
 
 # ---------- Тварини ----------
