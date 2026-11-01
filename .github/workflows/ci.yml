@@ -19,7 +19,8 @@ jobs:
 
   test:
     name: Тести pytest (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    # Ubuntu 24.04 зафіксовано явно: для ubuntu-latest (26.04) Python 3.9 вже недоступний
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
