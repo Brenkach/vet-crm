@@ -2,9 +2,37 @@
 
 Система для ветеринарної клініки: клієнти реєструються, додають своїх тварин і записуються на прийом, адміністратор керує записами та користувачами.
 
-Стек: FastAPI, SQLAlchemy 2.0 (async), Pydantic Settings, JWT, bcrypt, pytest, GitHub Actions, Render.
+Стек: FastAPI, SQLAlchemy 2.0 (async), Alembic, PostgreSQL, Pydantic Settings, JWT, bcrypt, Docker, pytest, GitHub Actions, Render.
 
 ![CI](https://github.com/Brenkach/vet-crm/actions/workflows/ci.yml/badge.svg)
+
+## Швидкий старт у Docker
+
+Потрібен лише [Docker Desktop](https://www.docker.com/products/docker-desktop/) і Python для генерації секретів.
+
+```bash
+python3 scripts/init_env.py      # створює .env з випадковими паролями і виводить пароль адміністратора
+docker compose up --build
+```
+
+Відкрийте http://localhost:8000 і увійдіть як `admin@example.com` з паролем, який вивів скрипт. Система складається з двох контейнерів: застосунку і PostgreSQL. Міграції бази даних застосовуються автоматично під час запуску.
+
+| Команда | Дія |
+|---|---|
+| `docker compose up --build` | зібрати образ і запустити систему |
+| `docker compose up -d` | запустити у фоні |
+| `docker compose ps` | стан контейнерів (обидва мають бути `healthy`) |
+| `docker compose logs -f app` | логи застосунку |
+| `docker compose down` | зупинити; дані БД зберігаються в томі |
+| `docker compose down -v` | зупинити і **видалити** дані БД |
+
+Режим розробки з автоматичним перезапуском при зміні коду:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+Детальніше про контейнеризацію: `docs/docker.md`.
 
 ## Середовища
 
@@ -30,11 +58,13 @@
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python scripts/init_env.py
 ```
 
-Скрипт `init_env.py` створює файли `.env.sandbox` і `.env.production` із шаблонів `*.example` та генерує для кожного середовища окремий `SECRET_KEY`. Він також виводить пароль демо-користувачів sandbox, його варто записати. Файли `.env.sandbox` і `.env.production` містять секрети, тому вони в `.gitignore` і в репозиторій не потрапляють.
+`requirements.txt` містить лише залежності застосунку (вони потрапляють у Docker-образ), а `requirements-dev.txt` додає до них інструменти для тестів.
+
+Скрипт `init_env.py` створює файли `.env.sandbox`, `.env.production` і `.env` (для Docker) із шаблонів `*.example` та генерує для кожного середовища окремий `SECRET_KEY`. Він також виводить пароль демо-користувачів sandbox, його варто записати. Файли `.env.sandbox` і `.env.production` містять секрети, тому вони в `.gitignore` і в репозиторій не потрапляють.
 
 ## Запуск у sandbox
 
@@ -108,8 +138,9 @@ python loadtest/run.py step           # 10 → 150 VUsers, 5 хв
 Пайплайн `.github/workflows/ci.yml` запускається при кожному пуші в `main` і при кожному Pull Request:
 
 1. **Лінтери**: ті самі перевірки, що й локально перед комітом (`pre-commit`: ruff, ruff-format, пробіли, кінці файлів).
-2. **Тести**: `pytest` на Python 3.9 і 3.12.
-3. **Деплой**: Render розгортає нову версію production лише після того, як обидва кроки пройшли успішно (`autoDeployTrigger: checksPass` у `render.yaml`).
+2. **Тести**: `pytest` на Python 3.9 і 3.12, включно з перевіркою, що міграції відповідають моделям.
+3. **Docker**: збирає образ, піднімає всю систему через `docker compose up --build`, перевіряє API, запис у PostgreSQL і збереження даних після перезапуску контейнерів.
+4. **Деплой**: Render розгортає нову версію production лише після того, як усі кроки пройшли успішно (`autoDeployTrigger: checksPass` у `render.yaml`).
 
 ## Деплой на Render
 
@@ -137,6 +168,11 @@ app/
   models.py          моделі БД
   seed.py            демо-дані для sandbox
   create_admin.py    створення адміністратора з консолі
+migrations/          міграції бази даних (Alembic)
+docker/entrypoint.sh запуск контейнера: міграції, потім сервер
+Dockerfile           багатоетапне збирання образу
+docker-compose.yml   оркестрація: застосунок + PostgreSQL
+docker-compose.dev.yml  режим розробки з hot-reload
 scripts/init_env.py  генерація .env.sandbox і .env.production
 loadtest/            навантажувальне тестування (Locust)
 tests/               pytest

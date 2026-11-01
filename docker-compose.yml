@@ -1,0 +1,62 @@
+# Оркестрація Vet CRM: застосунок + PostgreSQL.
+#
+#   docker compose up --build          — зібрати образ і підняти всю систему
+#   docker compose down                — зупинити (дані БД зберігаються в томі postgres_data)
+#   docker compose down -v             — зупинити і ВИДАЛИТИ дані БД
+#
+# Змінні оточення беруться з файлу .env (створюється командою: python scripts/init_env.py).
+
+name: vet-crm
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Задайте POSTGRES_USER у файлі .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте POSTGRES_PASSWORD у файлі .env}
+      POSTGRES_DB: ${POSTGRES_DB:-vet_crm}
+    volumes:
+      # Іменований том: дані переживають зупинку і видалення контейнера
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    # Порт БД назовні не відкривається — до неї має доступ лише застосунок через внутрішню мережу
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      target: runtime
+    image: vet-crm:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Адреса БД складається зі змінних .env; "db" — ім'я сервісу у внутрішній мережі Docker
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vet_crm}
+      # Схему БД створюють міграції Alembic (docker/entrypoint.sh), а не застосунок
+      AUTO_CREATE_TABLES: "false"
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      db:
+        # Застосунок стартує лише тоді, коли PostgreSQL готовий приймати з'єднання
+        condition: service_healthy
+    networks:
+      - backend
+      - frontend
+
+networks:
+  # Внутрішня мережа без виходу в інтернет: тут спілкуються застосунок і БД
+  backend:
+    internal: true
+  # Мережа для публікації порту застосунку на хост
+  frontend:
+
+volumes:
+  postgres_data:

@@ -7,7 +7,8 @@ services:
     plan: free
     region: frankfurt
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Спочатку міграції БД, потім сервер
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeployTrigger: checksPass
     envVars:
@@ -18,6 +19,8 @@ services:
       - key: DEBUG
         value: "false"
       - key: DOCS_ENABLED
+        value: "false"
+      - key: AUTO_CREATE_TABLES
         value: "false"
       - key: DATABASE_URL
         fromDatabase:

@@ -1,0 +1,47 @@
+# Усе, що не потрібно для роботи застосунку, у Docker-образ не потрапляє
+
+# Git і CI
+.git
+.gitignore
+.github
+.pre-commit-config.yaml
+
+# Python-оточення і кеші
+.venv
+venv
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# IDE та ОС
+.idea/
+.vscode/
+.DS_Store
+
+# Логи і локальні бази даних
+*.log
+*.db
+
+# Секрети: змінні оточення передаються в контейнер через docker compose, а не вшиваються в образ
+.env
+.env.*
+
+# Тести, навантажувальне тестування, документація
+tests/
+loadtest/
+docs/
+README.md
+pytest.ini
+pyproject.toml
+requirements-dev.txt
+requirements-loadtest.txt
+
+# Файли розгортання
+Dockerfile
+.dockerignore
+docker-compose*.yml
+render.yaml
+deploy/
+scripts/

@@ -31,7 +31,49 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - name: Встановлення залежностей
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-dev.txt
       - name: Запуск тестів
         # Тести самі задають APP_ENV=test і базу в пам'яті — секрети в CI не потрібні
         run: pytest -v
+
+  docker:
+    name: Docker (збирання образу і запуск системи)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Створення .env з випадковими секретами
+        run: python3 scripts/init_env.py
+      - name: Збирання і запуск (чекаємо, поки healthcheck усіх сервісів стане healthy)
+        run: docker compose up --build --detach --wait --wait-timeout 180
+      - name: Перевірка API, міграцій і запису в БД
+        run: |
+          set -e
+          curl -fsS http://localhost:8000/health
+          echo
+          ADMIN_PASSWORD=$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2)
+          curl -fsS -o /dev/null -w "Вхід адміністратора: %{http_code}\n" -X POST http://localhost:8000/auth/login \
+            --data-urlencode "username=admin@example.com" --data-urlencode "password=$ADMIN_PASSWORD"
+          curl -fsS -o /dev/null -w "Реєстрація клієнта: %{http_code}\n" -X POST http://localhost:8000/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{"email": "ci@example.com", "full_name": "CI", "password": "password123"}'
+          docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt"'
+      - name: Перевірка збереження даних після перезапуску контейнерів
+        run: |
+          docker compose down
+          docker compose up --detach --wait --wait-timeout 120
+          # Користувач ci@example.com має залишитися в томі БД, тож повторна реєстрація дає 409
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{"email": "ci@example.com", "full_name": "CI", "password": "password123"}')
+          echo "Повторна реєстрація після перезапуску: $CODE (очікується 409)"
+          test "$CODE" = "409"
+      - name: Розмір образів
+        run: |
+          docker build --target builder -t vet-crm:builder . > /dev/null
+          docker image ls --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep vet-crm
+      - name: Логи сервісів
+        if: always()
+        run: docker compose logs
+      - name: Зупинка
+        if: always()
+        run: docker compose down -v

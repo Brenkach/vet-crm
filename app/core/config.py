@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     debug: bool = False  # безпечне значення за замовчуванням
     docs_enabled: bool = False  # Swagger (/docs) вмикається явно
     log_level: str = "INFO"
+    # True — таблиці створюються при старті (зручно для локального SQLite).
+    # У Docker/production — False: схемою керують лише міграції Alembic.
+    auto_create_tables: bool = True
 
     # Обов'язкові — значень за замовчуванням немає
     database_url: str

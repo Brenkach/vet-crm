@@ -22,9 +22,10 @@ logger = logging.getLogger("vet_crm")
 async def lifespan(app: FastAPI):
     cfg: Settings = app.state.settings
     logger.info("Запуск у середовищі %s, БД: %s, debug=%s", cfg.app_env.value, cfg.safe_database_url, cfg.debug)
-    # Для лаби таблиці створюються при старті; у реальному проєкті — міграції Alembic
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if cfg.auto_create_tables:
+        # Локальний режим без міграцій. У Docker схему створює `alembic upgrade head` (docker/entrypoint.sh)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     if cfg.admin_email and cfg.admin_password:
         await ensure_admin(SessionLocal, cfg.admin_email, cfg.admin_password)
     yield
