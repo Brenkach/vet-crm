@@ -362,7 +362,7 @@ def build_report(out_dir: Path, meta: Optional[dict] = None) -> Path:
         )
 
     lines = [
-        f"# Звіт навантажувального тестування — профіль `{meta['profile']}`",
+        f"# Звіт навантажувального тестування — `{meta.get('name', meta['profile'])}` (профіль `{meta['profile']}`)",
         "",
         "| Параметр | Значення |",
         "|---|---|",

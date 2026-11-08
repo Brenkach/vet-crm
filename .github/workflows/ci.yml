@@ -38,32 +38,54 @@ jobs:
         run: pytest -v
 
   docker:
-    name: Docker (збирання образу і запуск системи)
+    name: Docker (збирання, балансування, відмовостійкість)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Створення .env з випадковими секретами
         run: python3 scripts/init_env.py
-      - name: Збирання і запуск (чекаємо, поки healthcheck усіх сервісів стане healthy)
+      - name: Збирання і запуск (Nginx + 3 репліки + PostgreSQL, чекаємо healthy)
         run: docker compose up --build --detach --wait --wait-timeout 180
+      - name: Стан контейнерів
+        run: docker compose ps
       - name: Перевірка API, міграцій і запису в БД
         run: |
           set -e
-          curl -fsS http://localhost:8000/health
+          curl -fsS http://localhost/health
           echo
           ADMIN_PASSWORD=$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2)
-          curl -fsS -o /dev/null -w "Вхід адміністратора: %{http_code}\n" -X POST http://localhost:8000/auth/login \
+          curl -fsS -o /dev/null -w "Вхід адміністратора: %{http_code}\n" -X POST http://localhost/auth/login \
             --data-urlencode "username=admin@example.com" --data-urlencode "password=$ADMIN_PASSWORD"
-          curl -fsS -o /dev/null -w "Реєстрація клієнта: %{http_code}\n" -X POST http://localhost:8000/auth/register \
+          curl -fsS -o /dev/null -w "Реєстрація клієнта: %{http_code}\n" -X POST http://localhost/auth/register \
             -H "Content-Type: application/json" \
             -d '{"email": "ci@example.com", "full_name": "CI", "password": "password123"}'
           docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt"'
+      - name: Round Robin — 12 запитів розподіляються між 3 репліками
+        run: python3 loadtest/lb_check.py -n 12 --expect-instances 3
+      - name: Відмова репліки — трафік іде лише на здорові
+        run: |
+          docker stop vet-crm-app-2
+          sleep 6  # DNS Docker і resolver Nginx (valid=5s) встигають прибрати зупинену репліку
+          python3 loadtest/lb_check.py -n 12 --expect-instances 2
+      - name: Відновлення репліки — вона повертається в ротацію
+        run: |
+          docker start vet-crm-app-2
+          until [ "$(docker inspect -f '{{.State.Health.Status}}' vet-crm-app-2)" = "healthy" ]; do sleep 2; done
+          sleep 12  # оновлення DNS (5 с) і завершення fail_timeout (10 с)
+          python3 loadtest/lb_check.py -n 12 --expect-instances 3
+      - name: Альтернативні алгоритми — ip_hash і least_conn
+        run: |
+          LB_ALGORITHM=ip_hash docker compose up --detach --wait nginx
+          python3 loadtest/lb_check.py -n 9 --expect-instances 1
+          LB_ALGORITHM=least_conn docker compose up --detach --wait nginx
+          python3 loadtest/lb_check.py -n 9 --expect-instances 3
+          docker compose up --detach --wait nginx
       - name: Перевірка збереження даних після перезапуску контейнерів
         run: |
           docker compose down
           docker compose up --detach --wait --wait-timeout 120
           # Користувач ci@example.com має залишитися в томі БД, тож повторна реєстрація дає 409
-          CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/auth/register \
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost/auth/register \
             -H "Content-Type: application/json" \
             -d '{"email": "ci@example.com", "full_name": "CI", "password": "password123"}')
           echo "Повторна реєстрація після перезапуску: $CODE (очікується 409)"

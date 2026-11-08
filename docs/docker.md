@@ -1,5 +1,7 @@
 # Контейнеризація (ЛР №5)
 
+> У ЛР №6 перед застосунком з'явився балансувальник Nginx і кілька реплік — актуальна схема в `docs/load-balancing.md`. Тепер єдина точка входу — http://localhost (порт `HTTP_PORT`), а порт застосунку назовні не публікується.
+
 ## Архітектура
 
 ```
@@ -103,7 +105,7 @@ app-1  | INFO:     Application startup complete.
 
 ```bash
 docker compose ps                                   # обидва сервіси: healthy
-curl http://localhost:8000/health                   # {"status":"ok","environment":"production"}
+curl http://localhost/health                        # {"status":"ok","environment":"production","instance":"..."}
 docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt"'
                                                     # таблиці users, pets, appointments, alembic_version
 ```

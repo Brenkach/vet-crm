@@ -3,6 +3,7 @@
 import logging
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.core.security import hash_password
@@ -24,6 +25,11 @@ async def ensure_admin(session_factory: async_sessionmaker, email: str, password
                 role=Role.ADMIN,
             )
         )
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            # Кілька реплік стартують одночасно: адміна вже створила інша репліка — це нормально
+            await session.rollback()
+            return False
     logger.info("Створено адміністратора %s", email)
     return True

@@ -49,6 +49,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", type=int, help="baseline: тривалість, с")
     parser.add_argument("--stages", help="step: кількість VUsers на кожному ступені, через кому")
     parser.add_argument("--stage-seconds", type=int, help="step: тривалість ступеня, с")
+    parser.add_argument("--name", help="назва папки з результатами (за замовчуванням — назва профілю)")
     parser.add_argument("--pid", type=int, help="PID процесу сервера, якщо автопошук знаходить кілька")
     parser.add_argument("--allow-production", action="store_true", help="дозволити тест не-sandbox середовища")
     return parser.parse_args()
@@ -77,11 +78,14 @@ def main() -> None:
     if processes:
         print("Моніторинг процесів сервера, PID:", ", ".join(str(p.pid) for p in processes))
     else:
-        print("УВАГА: процес uvicorn не знайдено — CPU/RAM сервера не буде виміряно (лише система загалом).")
+        print(
+            "УВАГА: процес uvicorn не знайдено — CPU/RAM сервера не буде виміряно (лише система загалом). "
+            "Якщо сервер у Docker, дивіться завантаження контейнерів командою: docker stats"
+        )
     if not (os.getenv("LOADTEST_ADMIN_EMAIL") and os.getenv("LOADTEST_ADMIN_PASSWORD")):
         print("Адміністратори в тесті не беруть участі (не задано LOADTEST_ADMIN_EMAIL / LOADTEST_ADMIN_PASSWORD).")
 
-    out_dir = RESULTS_DIR / args.profile
+    out_dir = RESULTS_DIR / (args.name or args.profile)
     shutil.rmtree(out_dir, ignore_errors=True)
     out_dir.mkdir(parents=True)
 
@@ -109,6 +113,7 @@ def main() -> None:
 
     meta = {
         "profile": args.profile,
+        "name": args.name or args.profile,
         "settings": profile,
         "host": args.host,
         "environment": environment,

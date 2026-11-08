@@ -1,0 +1,10 @@
+Method,Name,Error,Occurrences
+GET,GET /appointments,HTTPError('504 Server Error: Gateway Time-out for url: GET /appointments'),5
+POST,POST /pets,HTTPError('504 Server Error: Gateway Time-out for url: POST /pets'),35
+POST,POST /auth/login,HTTPError('504 Server Error: Gateway Time-out for url: POST /auth/login'),77
+POST,POST /auth/register,HTTPError('504 Server Error: Gateway Time-out for url: POST /auth/register'),124
+POST,POST /appointments/{id}/cancel,HTTPError('504 Server Error: Gateway Time-out for url: POST /appointments/{id}/cancel'),2
+GET,GET /pets,HTTPError('504 Server Error: Gateway Time-out for url: GET /pets'),11
+POST,POST /appointments,HTTPError('504 Server Error: Gateway Time-out for url: POST /appointments'),1
+GET,GET /users/me,HTTPError('504 Server Error: Gateway Time-out for url: GET /users/me'),7
+GET,GET /home,HTTPError('504 Server Error: Gateway Time-out for url: GET /home'),9

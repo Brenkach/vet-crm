@@ -1,8 +1,9 @@
-# Оркестрація Vet CRM: застосунок + PostgreSQL.
+# Оркестрація Vet CRM: Nginx (балансувальник) → кілька реплік застосунку → PostgreSQL.
 #
-#   docker compose up --build          — зібрати образ і підняти всю систему
-#   docker compose down                — зупинити (дані БД зберігаються в томі postgres_data)
-#   docker compose down -v             — зупинити і ВИДАЛИТИ дані БД
+#   docker compose up --build              — зібрати образи і підняти всю систему
+#   docker compose up -d --scale app=5     — змінити кількість реплік без зміни файлу
+#   docker compose down                    — зупинити (дані БД зберігаються в томі postgres_data)
+#   docker compose down -v                 — зупинити і ВИДАЛИТИ дані БД
 #
 # Змінні оточення беруться з файлу .env (створюється командою: python scripts/init_env.py).
 
@@ -21,7 +22,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - backend
-    # Порт БД назовні не відкривається — до неї має доступ лише застосунок через внутрішню мережу
+    # Порт БД назовні не відкривається — до неї мають доступ лише репліки застосунку
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
@@ -37,25 +38,48 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
+      # Значення з .env; з терміналу можна перевизначити: APP_ENV=sandbox docker compose up
+      APP_ENV: ${APP_ENV:-production}
       # Адреса БД складається зі змінних .env; "db" — ім'я сервісу у внутрішній мережі Docker
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-vet_crm}
       # Схему БД створюють міграції Alembic (docker/entrypoint.sh), а не застосунок
       AUTO_CREATE_TABLES: "false"
-    ports:
-      - "${APP_PORT:-8000}:8000"
+    deploy:
+      # Горизонтальне масштабування: кілька однакових реплік за балансувальником
+      replicas: ${APP_REPLICAS:-3}
+    # Портів назовні немає: усі запити приходять через Nginx
     depends_on:
       db:
-        # Застосунок стартує лише тоді, коли PostgreSQL готовий приймати з'єднання
         condition: service_healthy
     networks:
       - backend
+
+  nginx:
+    build: ./nginx
+    image: vet-crm-nginx:latest
+    restart: unless-stopped
+    environment:
+      LB_ALGORITHM: ${LB_ALGORITHM:-round_robin}
+    ports:
+      # Єдина точка входу в систему
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
       - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/nginx-health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
 networks:
-  # Внутрішня мережа без виходу в інтернет: тут спілкуються застосунок і БД
+  # Внутрішня мережа без виходу в інтернет: Nginx, репліки застосунку і БД
   backend:
     internal: true
-  # Мережа для публікації порту застосунку на хост
+  # Мережа для публікації порту Nginx на хост
   frontend:
 
 volumes:

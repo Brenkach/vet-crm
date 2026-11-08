@@ -1,0 +1,20 @@
+# Вибір алгоритму балансування за змінною LB_ALGORITHM.
+# Скрипт виконується офіційним entrypoint Nginx до підстановки змінних у шаблон конфігурації.
+#   round_robin — по черзі (за замовчуванням)
+#   least_conn  — на репліку з найменшою кількістю активних з'єднань
+#   ip_hash     — клієнт з однієї IP-адреси завжди потрапляє на ту саму репліку
+
+LB_ALGORITHM="${LB_ALGORITHM:-round_robin}"
+
+case "$LB_ALGORITHM" in
+  round_robin) NGINX_LB_DIRECTIVE="# round robin — алгоритм за замовчуванням, окрема директива не потрібна" ;;
+  least_conn) NGINX_LB_DIRECTIVE="least_conn;" ;;
+  ip_hash) NGINX_LB_DIRECTIVE="ip_hash;" ;;
+  *)
+    echo "Невідомий LB_ALGORITHM=$LB_ALGORITHM. Допустимі: round_robin, least_conn, ip_hash" >&2
+    exit 1
+    ;;
+esac
+
+echo "Балансування навантаження: $LB_ALGORITHM"
+export LB_ALGORITHM NGINX_LB_DIRECTIVE

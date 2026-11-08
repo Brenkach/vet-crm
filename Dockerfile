@@ -33,6 +33,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Застосунок працює від звичайного користувача, а не від root
 RUN useradd --create-home --uid 1000 app
 
+
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv

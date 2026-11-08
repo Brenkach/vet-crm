@@ -1,0 +1,18 @@
+{
+  "profile": "baseline",
+  "name": "lb-1-replica",
+  "settings": {
+    "users": 300,
+    "spawn_rate": 20.0,
+    "duration": 180
+  },
+  "host": "http://localhost",
+  "environment": "sandbox",
+  "admins_included": false,
+  "server_pids": [],
+  "machine": "Darwin arm64, 10 логічних ядер",
+  "python": "3.9.6",
+  "started_at": "2026-11-08T14:26:58",
+  "duration_s": 180.4,
+  "locust_exit_code": 1
+}

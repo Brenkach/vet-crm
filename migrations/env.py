@@ -41,6 +41,11 @@ def do_run_migrations(connection: Connection) -> None:
         render_as_batch=connection.dialect.name == "sqlite",  # SQLite не вміє ALTER TABLE для більшості змін
     )
     with context.begin_transaction():
+        if connection.dialect.name == "postgresql":
+            # Кілька реплік застосунку стартують одночасно і всі запускають міграції.
+            # Блокування PostgreSQL пропускає їх по одній: перша оновлює схему,
+            # решта чекають і бачать, що схема вже актуальна.
+            connection.exec_driver_sql("SELECT pg_advisory_xact_lock(7281)")
         context.run_migrations()
 
 

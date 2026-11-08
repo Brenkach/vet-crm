@@ -1,5 +1,7 @@
 """Обробка помилок 500 і режим відладки в різних середовищах."""
 
+import socket
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -81,7 +83,16 @@ async def test_docs_available_in_sandbox():
 
 async def test_health_reports_environment(production_app):
     resp = await request(production_app, "/health")
-    assert resp.json() == {"status": "ok", "environment": "production"}
+    body = resp.json()
+    assert body["status"] == "ok" and body["environment"] == "production"
+    assert body["instance"] == socket.gethostname()
+
+
+async def test_every_response_has_instance_header(production_app):
+    # Заголовок потрібен, щоб бачити, яка репліка за балансувальником обробила запит
+    for path in ("/health", "/users/me", "/ui/login.html"):
+        resp = await request(production_app, path)
+        assert resp.headers["X-Instance"] == socket.gethostname()
 
 
 async def test_regular_http_errors_unchanged(production_app):

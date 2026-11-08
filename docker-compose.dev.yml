@@ -10,6 +10,9 @@ services:
   app:
     image: vet-crm:dev
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app"]
+    deploy:
+      # Для розробки достатньо однієї репліки
+      replicas: 1
     environment:
       APP_ENV: sandbox
       DEBUG: "true"
@@ -19,3 +22,6 @@ services:
     volumes:
       - ./app:/app/app
       - ./migrations:/app/migrations
+
+  nginx:
+    image: vet-crm-nginx:dev

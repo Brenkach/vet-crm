@@ -1,0 +1,58 @@
+# Згенеровано з шаблону nginx/templates/default.conf.template при старті контейнера.
+# Алгоритм балансування: ${LB_ALGORITHM}
+
+# Вбудований DNS Docker. Ім'я сервісу "app" повертає IP-адреси всіх запущених реплік.
+# Список перевіряється кожні 5 с: зупинена репліка зникає з балансування, запущена — додається.
+resolver 127.0.0.11 valid=5s ipv6=off;
+
+# У лозі видно, на яку репліку пішов кожен запит
+log_format balancer '$remote_addr -> $upstream_addr [$upstream_status] "$request" $status $request_time';
+
+upstream vet_crm_backend {
+    # Спільна пам'ять для стану реплік (потрібна для resolve)
+    zone vet_crm_backend 64k;
+
+    ${NGINX_LB_DIRECTIVE}
+
+    # resolve — Nginx сам знаходить усі репліки сервісу app і стежить за змінами.
+    # max_fails/fail_timeout — пасивна перевірка здоров'я: після невдалої спроби
+    # репліка виключається з ротації на 10 с, потім Nginx пробує її знову.
+    server app:8000 resolve max_fails=1 fail_timeout=10s;
+
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    access_log /var/log/nginx/access.log balancer;
+
+    # Стан самого балансувальника (healthcheck контейнера)
+    location = /nginx-health {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location / {
+        proxy_pass http://vet_crm_backend;
+
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Відмовостійкість: якщо репліка не відповідає, запит прозоро повторюється на наступній
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 30s;
+        proxy_next_upstream error timeout http_502 http_503 http_504;
+        proxy_next_upstream_tries 3;
+        proxy_next_upstream_timeout 10s;
+
+        # Адреса репліки, яка обробила запит
+        add_header X-Upstream-Addr $upstream_addr always;
+    }
+}

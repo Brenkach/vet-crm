@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences
+POST,POST /auth/login,HTTPError('502 Server Error: Bad Gateway for url: POST /auth/login'),1
+POST,POST /appointments,HTTPError('502 Server Error: Bad Gateway for url: POST /appointments'),1

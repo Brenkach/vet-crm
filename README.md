@@ -2,7 +2,7 @@
 
 Система для ветеринарної клініки: клієнти реєструються, додають своїх тварин і записуються на прийом, адміністратор керує записами та користувачами.
 
-Стек: FastAPI, SQLAlchemy 2.0 (async), Alembic, PostgreSQL, Pydantic Settings, JWT, bcrypt, Docker, pytest, GitHub Actions, Render.
+Стек: Nginx, FastAPI, SQLAlchemy 2.0 (async), Alembic, PostgreSQL, Pydantic Settings, JWT, bcrypt, Docker, pytest, GitHub Actions, Render.
 
 ![CI](https://github.com/Brenkach/vet-crm/actions/workflows/ci.yml/badge.svg)
 
@@ -15,13 +15,15 @@ python3 scripts/init_env.py      # створює .env з випадковими
 docker compose up --build
 ```
 
-Відкрийте http://localhost:8000 і увійдіть як `admin@example.com` з паролем, який вивів скрипт. Система складається з двох контейнерів: застосунку і PostgreSQL. Міграції бази даних застосовуються автоматично під час запуску.
+Відкрийте http://localhost і увійдіть як `admin@example.com` з паролем, який вивів скрипт. Система складається з балансувальника Nginx, трьох реплік застосунку і PostgreSQL. Міграції бази даних застосовуються автоматично під час запуску. Якщо порт 80 зайнятий, змініть `HTTP_PORT` у `.env`.
 
 | Команда | Дія |
 |---|---|
 | `docker compose up --build` | зібрати образ і запустити систему |
 | `docker compose up -d` | запустити у фоні |
-| `docker compose ps` | стан контейнерів (обидва мають бути `healthy`) |
+| `docker compose ps` | стан контейнерів (усі мають бути `healthy`) |
+| `python loadtest/lb_check.py` | показати, як Nginx розподіляє запити між репліками |
+| `docker compose up -d --scale app=5` | змінити кількість реплік |
 | `docker compose logs -f app` | логи застосунку |
 | `docker compose down` | зупинити; дані БД зберігаються в томі |
 | `docker compose down -v` | зупинити і **видалити** дані БД |
@@ -32,7 +34,7 @@ docker compose up --build
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-Детальніше про контейнеризацію: `docs/docker.md`.
+Детальніше про контейнеризацію: `docs/docker.md`, про балансування навантаження: `docs/load-balancing.md`.
 
 ## Середовища
 
@@ -171,7 +173,8 @@ app/
 migrations/          міграції бази даних (Alembic)
 docker/entrypoint.sh запуск контейнера: міграції, потім сервер
 Dockerfile           багатоетапне збирання образу
-docker-compose.yml   оркестрація: застосунок + PostgreSQL
+docker-compose.yml   оркестрація: Nginx + репліки застосунку + PostgreSQL
+nginx/               образ і конфігурація балансувальника Nginx
 docker-compose.dev.yml  режим розробки з hot-reload
 scripts/init_env.py  генерація .env.sandbox і .env.production
 loadtest/            навантажувальне тестування (Locust)
