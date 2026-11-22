@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from app.core.security import hash_password
+from app.core.security import hash_password_async
 from app.models import Role, User
 
 logger = logging.getLogger("vet_crm.bootstrap")
@@ -21,7 +21,7 @@ async def ensure_admin(session_factory: async_sessionmaker, email: str, password
             User(
                 email=email.lower(),
                 full_name="Administrator",
-                hashed_password=hash_password(password),
+                hashed_password=await hash_password_async(password),
                 role=Role.ADMIN,
             )
         )

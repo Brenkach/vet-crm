@@ -1,0 +1,19 @@
+{
+  "profile": "baseline",
+  "name": "after-300-nocache",
+  "settings": {
+    "users": 300,
+    "spawn_rate": 20.0,
+    "duration": 180
+  },
+  "host": "http://localhost:80",
+  "environment": "sandbox",
+  "admins_included": false,
+  "server_pids": [],
+  "docker_project": "vet-crm-bench",
+  "machine": "Darwin arm64, 10 логічних ядер",
+  "python": "3.9.6",
+  "started_at": "2026-11-22T13:02:56",
+  "duration_s": 182.2,
+  "locust_exit_code": 0
+}

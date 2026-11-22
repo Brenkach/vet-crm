@@ -23,7 +23,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from monitor import ResourceMonitor, find_server_processes
+from monitor import DockerMonitor, ResourceMonitor, find_server_processes
 from report import build_report
 
 HERE = Path(__file__).resolve().parent
@@ -50,6 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stages", help="step: кількість VUsers на кожному ступені, через кому")
     parser.add_argument("--stage-seconds", type=int, help="step: тривалість ступеня, с")
     parser.add_argument("--name", help="назва папки з результатами (за замовчуванням — назва профілю)")
+    parser.add_argument("--docker", metavar="PROJECT", help="знімати CPU/RAM контейнерів docker compose цього проєкту")
     parser.add_argument("--pid", type=int, help="PID процесу сервера, якщо автопошук знаходить кілька")
     parser.add_argument("--allow-production", action="store_true", help="дозволити тест не-sandbox середовища")
     return parser.parse_args()
@@ -71,11 +72,13 @@ def main() -> None:
     if environment != "sandbox" and not args.allow_production:
         sys.exit(f"Середовище сервера: {environment}. Навантажувальні тести запускаються лише на sandbox.")
 
-    processes = find_server_processes(args.pid)
+    processes = [] if args.docker else find_server_processes(args.pid)
     roots = [p for p in processes if not any(p.ppid() == q.pid for q in processes)]
     if len(roots) > 1:
         print("УВАГА: знайдено кілька запущених серверів uvicorn — зупиніть зайві або вкажіть --pid.")
-    if processes:
+    if args.docker:
+        print(f"Моніторинг контейнерів Docker проєкту {args.docker} (docker stats)")
+    elif processes:
         print("Моніторинг процесів сервера, PID:", ", ".join(str(p.pid) for p in processes))
     else:
         print(
@@ -119,12 +122,16 @@ def main() -> None:
         "environment": environment,
         "admins_included": bool(os.getenv("LOADTEST_ADMIN_EMAIL")),
         "server_pids": [p.pid for p in processes],
+        "docker_project": args.docker,
         "machine": f"{platform.system()} {platform.machine()}, {os.cpu_count()} логічних ядер",
         "python": platform.python_version(),
         "started_at": datetime.now().isoformat(timespec="seconds"),
     }
 
-    monitor = ResourceMonitor(processes, out_dir / "resources.csv")
+    if args.docker:
+        monitor = DockerMonitor(args.docker, out_dir / "resources.csv")
+    else:
+        monitor = ResourceMonitor(processes, out_dir / "resources.csv")
     monitor.start()
     started = time.time()
     result = subprocess.run(cmd, env=env)

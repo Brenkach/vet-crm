@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import ensure_owner_or_admin, get_current_user
-from app.core.security import hash_password
+from app.core.deps import ensure_owner_or_admin, get_current_user, invalidate_user
+from app.core.security import hash_password_async
 from app.db.database import get_session
 from app.models import User
 from app.schemas import UserRead, UserUpdate
@@ -46,6 +46,7 @@ async def update_user(
     if data.full_name is not None:
         target.full_name = data.full_name
     if data.password is not None:
-        target.hashed_password = hash_password(data.password)
+        target.hashed_password = await hash_password_async(data.password)
     await session.commit()
+    await invalidate_user(target.id)
     return target

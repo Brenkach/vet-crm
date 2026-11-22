@@ -2,7 +2,7 @@
 
 Система для ветеринарної клініки: клієнти реєструються, додають своїх тварин і записуються на прийом, адміністратор керує записами та користувачами.
 
-Стек: Nginx, FastAPI, SQLAlchemy 2.0 (async), Alembic, PostgreSQL, Pydantic Settings, JWT, bcrypt, Docker, pytest, GitHub Actions, Render.
+Стек: Nginx, Redis, FastAPI, SQLAlchemy 2.0 (async), Alembic, PostgreSQL, Pydantic Settings, JWT, bcrypt, Docker, pytest, GitHub Actions, Render.
 
 ![CI](https://github.com/Brenkach/vet-crm/actions/workflows/ci.yml/badge.svg)
 
@@ -135,6 +135,14 @@ python loadtest/run.py step           # 10 → 150 VUsers, 5 хв
 
 Звіт з таблицями, графіками та виявленими вузькими місцями з'являється в `loadtest/results/<профіль>/report.md`.
 
+## Оптимізація продуктивності
+
+Bcrypt у пулі потоків, оптимізовані запити до БД, частковий індекс і кеш Redis з TTL. Аналіз, обґрунтування і результати «ДО/ПІСЛЯ» — у `docs/performance.md`.
+
+```bash
+loadtest/lab7.sh                      # порівняльний експеримент ДО/ПІСЛЯ (~16 хв)
+```
+
 ## CI/CD
 
 Пайплайн `.github/workflows/ci.yml` запускається при кожному пуші в `main` і при кожному Pull Request:
@@ -173,7 +181,7 @@ app/
 migrations/          міграції бази даних (Alembic)
 docker/entrypoint.sh запуск контейнера: міграції, потім сервер
 Dockerfile           багатоетапне збирання образу
-docker-compose.yml   оркестрація: Nginx + репліки застосунку + PostgreSQL
+docker-compose.yml   оркестрація: Nginx + репліки застосунку + PostgreSQL + Redis
 nginx/               образ і конфігурація балансувальника Nginx
 docker-compose.dev.yml  режим розробки з hot-reload
 scripts/init_env.py  генерація .env.sandbox і .env.production

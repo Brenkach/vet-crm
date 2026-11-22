@@ -1,0 +1,4 @@
+Method,Name,Error,Occurrences
+POST,POST /auth/register,HTTPError('502 Server Error: Bad Gateway for url: POST /auth/register'),1
+POST,POST /auth/login,HTTPError('502 Server Error: Bad Gateway for url: POST /auth/login'),1
+POST,POST /auth/login,HTTPError('504 Server Error: Gateway Time-out for url: POST /auth/login'),2

@@ -2,7 +2,7 @@ import enum
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -50,8 +50,12 @@ class Pet(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
 
     owner: Mapped[User] = relationship(back_populates="pets")
+    # ЛР №7: було lazy="selectin" — кожне завантаження тварини тягнуло всі її записи на прийом,
+    # хоча відповідь API їх не містить. Тепер зв'язки не завантажуються неявно (lazy="raise"),
+    # а потрібні дані підтягуються явно в запиті (joinedload) лише там, де вони справді потрібні.
+    # passive_deletes — записи видаляє сама БД (ON DELETE CASCADE), без завантаження їх у пам'ять.
     appointments: Mapped[list["Appointment"]] = relationship(
-        back_populates="pet", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="pet", cascade="all, delete-orphan", lazy="raise", passive_deletes=True
     )
 
 
@@ -67,5 +71,15 @@ class Appointment(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    # selectin: власник тварини потрібен для перевірки прав, а lazy-load в async заборонений
-    pet: Mapped[Pet] = relationship(back_populates="appointments", lazy="selectin")
+    pet: Mapped[Pet] = relationship(back_populates="appointments", lazy="raise")
+
+    __table_args__ = (
+        # ЛР №7: частковий індекс лише для запланованих прийомів (~5% таблиці).
+        # Прискорює статистику адміністратора і вибірку майбутніх прийомів — див. docs/performance.md
+        Index(
+            "ix_appointments_scheduled",
+            "scheduled_at",
+            postgresql_where=text("status = 'scheduled'"),
+            sqlite_where=text("status = 'scheduled'"),
+        ),
+    )

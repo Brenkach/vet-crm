@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, hash_password_async, verify_password_async
 from app.db.database import get_session
 from app.models import Role, User
 from app.schemas import Token, UserRead, UserRegister
@@ -14,13 +14,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def register(data: UserRegister, session: AsyncSession = Depends(get_session)):
     email = data.email.lower()
+    # ЛР №7: хеш рахується в пулі потоків і ДО звернення до БД — щоб не тримати з'єднання
+    # з пулу ці ~0.25 с, поки працює bcrypt
+    hashed_password = await hash_password_async(data.password)
     if await session.scalar(select(User).where(User.email == email)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Користувач з таким email вже існує")
 
     user = User(
         email=email,
         full_name=data.full_name,
-        hashed_password=hash_password(data.password),
+        hashed_password=hashed_password,
         role=Role.CLIENT,  # через публічну реєстрацію — тільки звичайний користувач
     )
     session.add(user)
@@ -36,8 +39,10 @@ async def login(
 ):
     """Вхід для всіх ролей. У полі username передається email."""
     user = await session.scalar(select(User).where(User.email == form.username.lower()))
+    # ЛР №7: завершуємо транзакцію, щоб повернути з'єднання в пул до повільної перевірки пароля
+    await session.commit()
     # Однакова відповідь для "немає такого email" і "невірний пароль" — не розкриваємо, які email існують
-    if user is None or not verify_password(form.password, user.hashed_password):
+    if user is None or not await verify_password_async(form.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невірний email або пароль",

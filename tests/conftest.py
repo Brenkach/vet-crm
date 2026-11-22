@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # no
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
 from app.core.security import hash_password  # noqa: E402
-from app.db.database import Base, get_session  # noqa: E402
+from app.db.database import Base, enable_sqlite_foreign_keys, get_session  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import Role, User  # noqa: E402
 
@@ -31,6 +31,7 @@ async def session_factory():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,  # одне з'єднання — інакше кожне бачило б свою порожню БД
     )
+    enable_sqlite_foreign_keys(engine.sync_engine)  # ON DELETE CASCADE, як у PostgreSQL
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield async_sessionmaker(engine, expire_on_commit=False)

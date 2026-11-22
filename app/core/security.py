@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 import bcrypt
 import jwt
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
 
@@ -18,6 +19,18 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
     except ValueError:
         return False
+
+
+# bcrypt навмисно повільний (~0.2–0.3 с CPU на одну операцію). Якщо викликати його прямо
+# в async-обробнику, він блокує цикл подій, і репліка не обробляє жодного іншого запиту.
+# bcrypt звільняє GIL, тож у пулі потоків хешування йде паралельно на кількох ядрах,
+# а цикл подій тим часом обслуговує інші запити.
+async def hash_password_async(password: str) -> str:
+    return await run_in_threadpool(hash_password, password)
+
+
+async def verify_password_async(password: str, hashed_password: str) -> bool:
+    return await run_in_threadpool(verify_password, password, hashed_password)
 
 
 def create_access_token(subject: str, expires_minutes: Optional[int] = None) -> str:

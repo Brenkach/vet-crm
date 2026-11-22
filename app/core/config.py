@@ -44,6 +44,17 @@ class Settings(BaseSettings):
     database_url: str
     secret_key: str = Field(min_length=32)
 
+    # Пул з'єднань з PostgreSQL на кожну репліку (для SQLite не застосовується)
+    db_pool_size: int = Field(default=10, ge=1)
+    db_max_overflow: int = Field(default=10, ge=0)
+
+    # Кеш Redis (ЛР №7). Без REDIS_URL або з CACHE_ENABLED=false застосунок працює без кешу.
+    redis_url: Optional[str] = None
+    cache_enabled: bool = True
+    cache_user_ttl: int = Field(default=60, ge=1)  # профіль поточного користувача, с
+    cache_pets_ttl: int = Field(default=60, ge=1)  # список тварин клієнта, с
+    cache_stats_ttl: int = Field(default=10, ge=1)  # статистика адміністратора, с
+
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = Field(default=60, gt=0)
 
@@ -62,7 +73,7 @@ class Settings(BaseSettings):
                 return "postgresql+asyncpg://" + value[len(prefix) :]
         return value
 
-    @field_validator("admin_email", "admin_password", "seed_user_password", mode="before")
+    @field_validator("admin_email", "admin_password", "seed_user_password", "redis_url", mode="before")
     @classmethod
     def empty_to_none(cls, value):
         return value or None

@@ -80,7 +80,13 @@ def resource_summary(resources, start: Optional[float] = None, end: Optional[flo
     cpu = [num(r["server_cpu_percent"]) for r in samples]
     ram = [num(r["server_rss_mb"]) for r in samples]
     sys_cpu = [num(r["system_cpu_percent"]) for r in samples]
+    extra = {}
+    for key in ("db_cpu_percent", "db_mem_mb", "redis_cpu_percent", "redis_mem_mb"):
+        values = [num(r.get(key)) for r in samples if num(r.get(key)) is not None]
+        if values:
+            extra[key] = (statistics.mean(values), max(values))
     return {
+        "extra": extra,
         "cpu_avg": statistics.mean(cpu),
         "cpu_max": max(cpu),
         "ram_avg": statistics.mean(ram),
@@ -394,11 +400,21 @@ def build_report(out_dir: Path, meta: Optional[dict] = None) -> Path:
             "|---|---:|---:|",
             f"| CPU процесу сервера, % одного ядра | {fmt(res['cpu_avg'])} | {fmt(res['cpu_max'])} |",
             f"| RAM процесу сервера, МБ | {fmt(res['ram_avg'])} | {fmt(res['ram_max'])} |",
+            *[
+                f"| {title} | {fmt(res['extra'][key][0])} | {fmt(res['extra'][key][1])} |"
+                for key, title in (
+                    ("db_cpu_percent", "CPU PostgreSQL, % одного ядра"),
+                    ("db_mem_mb", "RAM PostgreSQL, МБ"),
+                    ("redis_cpu_percent", "CPU Redis, % одного ядра"),
+                    ("redis_mem_mb", "RAM Redis, МБ"),
+                )
+                if key in res["extra"]
+            ],
             f"| CPU системи, % | {fmt(res['sys_cpu_avg'])} | {fmt(res['sys_cpu_max'])} |",
             f"| RAM системи, % | — | {fmt(res['sys_mem_max'])} |",
             "",
             "> Locust працює на тій самій машині, що й сервер, тож частину CPU системи "
-            "займає сам генератор навантаження.",
+            "займає сам генератор навантаження. Для Docker «процес сервера» — це сума всіх реплік застосунку.",
         ]
     else:
         lines.append("Дані моніторингу відсутні (процес сервера не знайдено).")

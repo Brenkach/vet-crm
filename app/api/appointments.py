@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.api.pets import get_pet_or_404
 from app.core.deps import ensure_owner_or_admin, get_current_user, require_roles
@@ -18,7 +19,11 @@ def _as_utc(dt: datetime) -> datetime:
 
 
 async def _get_appointment_or_404(session: AsyncSession, appointment_id: int) -> Appointment:
-    appointment = await session.get(Appointment, appointment_id)
+    # ЛР №7: тварина (для перевірки власника) підтягується тим самим запитом через JOIN,
+    # а не окремим запитом, як було з lazy="selectin"
+    appointment = await session.scalar(
+        select(Appointment).options(joinedload(Appointment.pet)).where(Appointment.id == appointment_id)
+    )
     if appointment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Запис не знайдено")
     return appointment

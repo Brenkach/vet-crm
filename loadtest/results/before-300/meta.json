@@ -1,0 +1,19 @@
+{
+  "profile": "baseline",
+  "name": "before-300",
+  "settings": {
+    "users": 300,
+    "spawn_rate": 20.0,
+    "duration": 180
+  },
+  "host": "http://localhost:80",
+  "environment": "sandbox",
+  "admins_included": false,
+  "server_pids": [],
+  "docker_project": "vet-crm-bench",
+  "machine": "Darwin arm64, 10 логічних ядер",
+  "python": "3.9.6",
+  "started_at": "2026-11-22T12:59:28",
+  "duration_s": 181.7,
+  "locust_exit_code": 1
+}

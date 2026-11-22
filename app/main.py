@@ -11,6 +11,7 @@ from app import models  # noqa: F401  — реєструє моделі в Base.
 from app.api.routes import router
 from app.api.system import INSTANCE_ID
 from app.core.bootstrap import ensure_admin
+from app.core.cache import cache
 from app.core.config import Settings, settings
 from app.core.errors import register_error_handlers
 from app.db.database import Base, SessionLocal, engine
@@ -35,7 +36,9 @@ async def lifespan(app: FastAPI):
             await conn.run_sync(Base.metadata.create_all)
     if cfg.admin_email and cfg.admin_password:
         await ensure_admin(SessionLocal, cfg.admin_email, cfg.admin_password)
+    logger.info("Кеш Redis: %s", "увімкнено" if cache.enabled else "вимкнено")
     yield
+    await cache.close()
     await engine.dispose()
 
 
@@ -53,6 +56,7 @@ def create_app(app_settings: Optional[Settings] = None) -> FastAPI:
         openapi_url="/openapi.json" if cfg.docs_enabled else None,
     )
     app.state.settings = cfg
+    cache.configure(cfg.redis_url, cfg.cache_enabled)
     register_error_handlers(app)
     app.include_router(router)
 

@@ -6,6 +6,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import cache, user_key
+from app.core.config import settings
 from app.core.security import decode_access_token
 from app.db.database import get_session
 from app.models import Role, User
@@ -31,11 +33,34 @@ async def get_current_user(
     except (TypeError, ValueError):
         raise credentials_error
 
-    # Роль беремо з БД, а не з токена: зміна ролі адміном діє одразу
-    user = await session.get(User, user_id)
+    # ЛР №7: користувач потрібен на КОЖНОМУ запиті, тож профіль кешується в Redis.
+    # Роль, як і раніше, береться не з токена: при зміні ролі чи профілю ключ видаляється
+    # (див. invalidate_user), тож зміна діє одразу.
+    cached = await cache.get(user_key(user_id))
+    if cached is not None:
+        user = User(**{**cached, "role": Role(cached["role"])})
+    else:
+        user = await session.get(User, user_id)
+        if user is not None:
+            await cache.set(user_key(user_id), user_to_cache(user), settings.cache_user_ttl)
     if user is None or not user.is_active:
         raise credentials_error
     return user
+
+
+def user_to_cache(user: User) -> dict:
+    # Хеш пароля в кеш не потрапляє
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role.value,
+        "is_active": user.is_active,
+    }
+
+
+async def invalidate_user(user_id: int) -> None:
+    await cache.delete(user_key(user_id))
 
 
 def require_roles(*roles: Role) -> Callable:

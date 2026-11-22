@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import cache, pets_key
+from app.core.config import settings
 from app.core.deps import ensure_owner_or_admin, get_current_user
 from app.db.database import get_session
 from app.models import Pet, Role, User
@@ -18,11 +20,25 @@ async def get_pet_or_404(session: AsyncSession, pet_id: int) -> Pet:
 
 
 @router.get("", response_model=list[PetRead])
-async def list_pets(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
-    stmt = select(Pet).order_by(Pet.id)
-    if user.role != Role.ADMIN:
-        stmt = stmt.where(Pet.owner_id == user.id)
-    return (await session.scalars(stmt)).all()
+async def list_pets(
+    response: Response,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if user.role == Role.ADMIN:
+        return (await session.scalars(select(Pet).order_by(Pet.id))).all()
+
+    # ЛР №7: список тварин клієнта — найчастіший запит сценарію; кешується до зміни даних
+    cached = await cache.get(pets_key(user.id))
+    if cached is not None:
+        response.headers["X-Cache"] = "HIT"
+        return cached
+    pets = (await session.scalars(select(Pet).where(Pet.owner_id == user.id).order_by(Pet.id))).all()
+    payload = [PetRead.model_validate(p).model_dump(mode="json") for p in pets]
+    await cache.set(pets_key(user.id), payload, settings.cache_pets_ttl)
+    if cache.enabled:
+        response.headers["X-Cache"] = "MISS"
+    return payload
 
 
 @router.post("", response_model=PetRead, status_code=status.HTTP_201_CREATED)
@@ -36,6 +52,7 @@ async def create_pet(
     session.add(pet)
     await session.commit()
     await session.refresh(pet)
+    await cache.delete(pets_key(pet.owner_id))
     return pet
 
 
@@ -58,6 +75,7 @@ async def update_pet(
     for field, value in data.model_dump(exclude_unset=True).items():
         setattr(pet, field, value)
     await session.commit()
+    await cache.delete(pets_key(pet.owner_id))
     return pet
 
 
@@ -67,4 +85,5 @@ async def delete_pet(pet_id: int, user: User = Depends(get_current_user), sessio
     ensure_owner_or_admin(user, pet.owner_id)
     await session.delete(pet)
     await session.commit()
+    await cache.delete(pets_key(pet.owner_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
